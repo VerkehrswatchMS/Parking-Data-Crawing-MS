@@ -56,11 +56,20 @@ def main():
         scores.append(int(score))
         stati.append(translateStatus(status))
         
-    print(date)
-    print(dbtitles)
-    print(scores)
-    print(stati)
-
+    tableColumnCount = ''
+    tableColumnState = ''
+    countValues = ''
+    statusValues = ''
+    for i in dbtitles:
+        tableColumnCount = tableColumnCount+', '+i+'_count'
+        tableColumnState = tableColumnState+', '+i+'_status'
+    for i in scores:
+        countValues = countValues + ', '+str(i)
+    for i in stati:
+        statusValues = statusValues + ', '+str(i)
+    
+    statement = 'INSERT INTO parkingStatsTable (Zeit, '+ tableColumnCount+tableColumnState+') VALUES ('+date+countValues+statusValues+')'
+    print(statement)
 
 if __name__ == "__main__":
     main()
