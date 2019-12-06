@@ -1,0 +1,1 @@
+This Bot is collecting the parking data from https://www.stadt-muenster.de/tiefbauamt/parkleitsystem/ and is storing the data into a sql databaser for further analysis.
