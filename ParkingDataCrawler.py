@@ -1,6 +1,29 @@
 import sys
 import requests
+import mysql.connector as mariadb
+import config
+import logging
+import datetime
 from bs4 import BeautifulSoup
+
+def checkNumber (number):
+    try:
+        result = int(number)
+    except:
+        result = null
+    return result
+
+def sendToDB (statement):
+    mariadb_connection = mariadb.connect(user=config.user, password=config.password, database=config.database)
+    cursor = mariadb_connection.cursor()
+    result = 1    
+    try:
+        cursor.execute(statement)
+    except Exception as e:
+        result = e
+    mariadb_connection.commit()
+    mariadb_connection.close()
+    return result
 
 def translateDate(dateString):
     day = dateString[0:2]
@@ -23,13 +46,12 @@ def translateStatus (statusString):
         result = 4
     return result
 
-def main():
-    # connect with website
+def main():    
+    logging.basicConfig(level=logging.WARNING, filename='warning.log')    
     result = requests.get('https://www.stadt-muenster.de/tiefbauamt/parkleitsystem')
     if result.status_code != 200:
         print("Request failed with status code: {:d}!".format(result.status_code), file=sys.stderr)
 
-    # get parking table
     soup = BeautifulSoup(result.text, 'html.parser')
     parking_table = soup.find('div', id='parkingList')('table')
     date = soup.find('strong', id='lastRefresh').text.strip()
@@ -52,8 +74,8 @@ def main():
         dbtitle = title.replace(' ','_')
         
         dbtitles.append(dbtitle)
-        titles.append(title)
-        scores.append(int(score))
+        titles.append(title)        
+        scores.append(checkNumber(score))
         stati.append(translateStatus(status))
         
     tableColumnCount = ''
@@ -68,8 +90,13 @@ def main():
     for i in stati:
         statusValues = statusValues + ', '+str(i)
     
-    statement = 'INSERT INTO parkingStatsTable (Zeit, '+ tableColumnCount+tableColumnState+') VALUES ('+date+countValues+statusValues+')'
-    print(statement)
+    statement = 'INSERT INTO parkingStatsTable (Zeit'+ tableColumnCount+tableColumnState+') VALUES ("'+date+'"'+countValues+statusValues+');'
+    success = 0
+    if (statement):
+        success = sendToDB(statement)
+    
+    if (success != 1):
+        logging.warning(str(datetime.datetime.now())+' | '+str(success)+' | '+statement)
 
 if __name__ == "__main__":
     main()
